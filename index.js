@@ -12,10 +12,6 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
-
 const app = express();
 app.use(express.json({ limit: "10mb" }));
 
