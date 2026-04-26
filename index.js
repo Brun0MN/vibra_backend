@@ -2,7 +2,6 @@ console.log("Backend iniciando...");
 
 const express = require("express");
 const mqtt = require("mqtt");
-const admin = require("firebase-admin");
 
 //const serviceAccount = require("./serviceAccountKey.json");
 const admin = require("firebase-admin");
