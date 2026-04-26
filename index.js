@@ -5,9 +5,9 @@ const mqtt = require("mqtt");
 const admin = require("firebase-admin");
 
 //const serviceAccount = require("./serviceAccountKey.json");
-const serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
-
 const admin = require("firebase-admin");
+
+const serviceAccount = JSON.parse(process.env.FIREBASE_CREDENTIALS);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
