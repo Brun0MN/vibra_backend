@@ -76,17 +76,12 @@ client.on("message", async (topic, messageBuffer) => {
 
   if (topic.includes("/chunk")) {
     try {
-      const data = JSON.parse(payload.toString());
+      const data = JSON.parse(messageBuffer.toString());
+  
       await salvarChunk(data);
-
+  
       console.log(
         `Chunk MQTT recebido: ${data.chunkIndex + 1}/${data.totalChunks} - ${data.measurementId}`
-      );
-  
-      //await salvarChunk(payload);
-  
-      console.log(
-        `Chunk MQTT recebido: ${payload.chunkIndex + 1}/${payload.totalChunks} - ${payload.measurementId}`
       );
     } catch (error) {
       console.error("Erro ao processar chunk MQTT:", error);
