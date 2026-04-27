@@ -557,6 +557,13 @@ app.get("/tendencia", async (req, res) => {
     res.status(500).json({ ok: false, error: error.message });
   }
 });
+app.get("/", (req, res) => {
+  res.json({
+    ok: true,
+    service: "vibra_backend",
+    status: "online",
+  });
+});
 app.listen(PORT, () => {
   console.log(`HTTP server rodando na porta ${PORT}`);
 });
