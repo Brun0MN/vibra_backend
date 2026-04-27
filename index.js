@@ -55,6 +55,14 @@ client.on("connect", () => {
     }
   });
 
+  client.subscribe("vibracao/+/chunk", (err) => {
+    if (err) {
+      console.error("Erro ao assinar vibracao/+/chunk:", err);
+    } else {
+      console.log("Assinado em vibracao/+/chunk");
+    }
+  });
+
   client.subscribe("vibracao/+/medicao", (err) => {
     if (err) {
       console.error("Erro ao assinar tópico medicao:", err);
@@ -65,6 +73,22 @@ client.on("connect", () => {
 });
 
 client.on("message", async (topic, messageBuffer) => {
+
+  if (topic.includes("/chunk")) {
+    try {
+      const payload = JSON.parse(message.toString());
+  
+      await salvarChunk(payload);
+  
+      console.log(
+        `Chunk MQTT recebido: ${payload.chunkIndex + 1}/${payload.totalChunks} - ${payload.measurementId}`
+      );
+    } catch (error) {
+      console.error("Erro ao processar chunk MQTT:", error);
+    }
+  
+    return;
+  }
   try {
     const payload = JSON.parse(messageBuffer.toString());
     console.log(`Mensagem recebida em ${topic}`);
@@ -78,6 +102,78 @@ client.on("message", async (topic, messageBuffer) => {
     console.error("Erro ao processar mensagem MQTT:", error);
   }
 });
+
+async function salvarChunk(payload) {
+  if (!payload.measurementId) {
+    throw new Error("chunk sem measurementId");
+  }
+
+  const chunkDoc = {
+    measurementId: payload.measurementId,
+    machineId: payload.machineId || "desconhecido",
+    sensorId: payload.sensorId || "desconhecido",
+
+    chunkIndex: payload.chunkIndex ?? 0,
+    totalChunks: payload.totalChunks ?? 1,
+
+    samplingFrequency: payload.samplingFrequency || 0,
+    samplesInChunk: payload.samplesInChunk || 0,
+
+    timeAxis: sanitizeArray(payload.timeAxis),
+    timeX: sanitizeArray(payload.timeX),
+    timeY: sanitizeArray(payload.timeY),
+    timeZ: sanitizeArray(payload.timeZ),
+    timeRes: sanitizeArray(payload.timeRes),
+
+    fftFreq: sanitizeArray(payload.fftFreq),
+    fftX: sanitizeArray(payload.fftX),
+    fftY: sanitizeArray(payload.fftY),
+    fftZ: sanitizeArray(payload.fftZ),
+    fftRes: sanitizeArray(payload.fftRes),
+
+    dominantFreqX: safeNumber(payload.dominantFreqX),
+    dominantFreqY: safeNumber(payload.dominantFreqY),
+    dominantFreqZ: safeNumber(payload.dominantFreqZ),
+    dominantFreqRes: safeNumber(payload.dominantFreqRes),
+
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+
+  await db.collection("medicoes_chunks").add(chunkDoc);
+
+  if (chunkDoc.chunkIndex === chunkDoc.totalChunks - 1) {
+    await db.collection("medicoes").add({
+      machineId: chunkDoc.machineId,
+      sensorId: chunkDoc.sensorId,
+      measurementId: chunkDoc.measurementId,
+
+      samplingFrequency: chunkDoc.samplingFrequency,
+      samples: chunkDoc.totalChunks * chunkDoc.samplesInChunk,
+      measurementDurationSec:
+        (chunkDoc.totalChunks * chunkDoc.samplesInChunk) /
+        chunkDoc.samplingFrequency,
+
+      vrmsX: safeNumber(payload.vrmsX),
+      vrmsY: safeNumber(payload.vrmsY),
+      vrmsZ: safeNumber(payload.vrmsZ),
+      vrmsGlobal: safeNumber(payload.vrmsGlobal),
+      vrmsVelGlobal: safeNumber(payload.vrmsVelGlobal),
+
+      dominantFreqX: safeNumber(payload.dominantFreqX),
+      dominantFreqY: safeNumber(payload.dominantFreqY),
+      dominantFreqZ: safeNumber(payload.dominantFreqZ),
+      dominantFreqRes: safeNumber(payload.dominantFreqRes),
+
+      isoZone: payload.isoZone || "-",
+      isoStatus: payload.isoStatus || "-",
+
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      type: "medicao",
+    });
+
+    console.log(`Resumo da medição criado: ${chunkDoc.measurementId}`);
+  }
+}
 
 async function handleResumo(payload) {
   validateResumo(payload);
