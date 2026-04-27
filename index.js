@@ -89,18 +89,18 @@ client.on("message", async (topic, messageBuffer) => {
   
     return;
   }
-  try {
-    const payload = JSON.parse(messageBuffer.toString());
-    console.log(`Mensagem recebida em ${topic}`);
+  // try {
+  //   const payload = JSON.parse(messageBuffer.toString());
+  //   console.log(`Mensagem recebida em ${topic}`);
 
-    if (topic.endsWith("/resumo")) {
-      await handleResumo(payload);
-    } else if (topic.endsWith("/medicao")) {
-      await handleMedicao(payload);
-    }
-  } catch (error) {
-    console.error("Erro ao processar mensagem MQTT:", error);
-  }
+  //   if (topic.endsWith("/resumo")) {
+  //     await handleResumo(payload);
+  //   } else if (topic.endsWith("/medicao")) {
+  //     await handleMedicao(payload);
+  //   }
+  // } catch (error) {
+  //   console.error("Erro ao processar mensagem MQTT:", error);
+  // }
 });
 
 async function salvarChunk(payload) {
