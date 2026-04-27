@@ -76,9 +76,14 @@ client.on("message", async (topic, messageBuffer) => {
 
   if (topic.includes("/chunk")) {
     try {
-      const payload = JSON.parse(message.toString());
+      const data = JSON.parse(payload.toString());
+      await salvarChunk(data);
+
+      console.log(
+        `Chunk MQTT recebido: ${data.chunkIndex + 1}/${data.totalChunks} - ${data.measurementId}`
+      );
   
-      await salvarChunk(payload);
+      //await salvarChunk(payload);
   
       console.log(
         `Chunk MQTT recebido: ${payload.chunkIndex + 1}/${payload.totalChunks} - ${payload.measurementId}`
