@@ -1,5 +1,16 @@
 console.log("Backend iniciando...");
 
+const { InfluxDB, Point } = require('@influxdata/influxdb-client');
+
+const influx = new InfluxDB({
+  url: process.env.INFLUX_URL,
+  token: process.env.INFLUX_TOKEN,
+});
+
+const writeApi = influx.getWriteApi(
+  process.env.INFLUX_ORG,
+  process.env.INFLUX_BUCKET
+);
 const express = require("express");
 const mqtt = require("mqtt");
 
@@ -173,6 +184,7 @@ async function salvarChunk(payload) {
 
     console.log(`Resumo da medição criado: ${chunkDoc.measurementId}`);
   }
+  salvarInfluxResumo(payload);
 }
 
 async function handleResumo(payload) {
@@ -265,6 +277,20 @@ async function handleMedicao(payload) {
 
   await db.collection("medicoes").add(doc);
   console.log("Medição completa salva no Firestore");
+}
+
+function salvarInfluxResumo(data) {
+  const point = new Point("vibracao")
+    .tag("machineId", data.machineId)
+    .floatField("vrmsVelGlobal", data.vrmsVelGlobal || 0)
+    .floatField("vrmsGlobal", data.vrmsGlobal || 0)
+    .floatField("dominantFreqX", data.dominantFreqX || 0)
+    .floatField("dominantFreqY", data.dominantFreqY || 0)
+    .floatField("dominantFreqZ", data.dominantFreqZ || 0)
+    .stringField("isoZone", data.isoZone || "")
+    .stringField("isoStatus", data.isoStatus || "");
+
+  writeApi.writePoint(point);
 }
 
 function validateResumo(payload) {
