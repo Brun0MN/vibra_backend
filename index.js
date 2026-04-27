@@ -153,38 +153,42 @@ async function salvarChunk(payload) {
   await db.collection("medicoes_chunks").add(chunkDoc);
 
   if (chunkDoc.chunkIndex === chunkDoc.totalChunks - 1) {
-    await db.collection("medicoes").add({
+    const resumo = {
       machineId: chunkDoc.machineId,
       sensorId: chunkDoc.sensorId,
       measurementId: chunkDoc.measurementId,
-
-      samplingFrequency: chunkDoc.samplingFrequency,
-      samples: chunkDoc.totalChunks * chunkDoc.samplesInChunk,
-      measurementDurationSec:
-        (chunkDoc.totalChunks * chunkDoc.samplesInChunk) /
-        chunkDoc.samplingFrequency,
-
+  
       vrmsX: safeNumber(payload.vrmsX),
       vrmsY: safeNumber(payload.vrmsY),
       vrmsZ: safeNumber(payload.vrmsZ),
       vrmsGlobal: safeNumber(payload.vrmsGlobal),
       vrmsVelGlobal: safeNumber(payload.vrmsVelGlobal),
-
+  
       dominantFreqX: safeNumber(payload.dominantFreqX),
       dominantFreqY: safeNumber(payload.dominantFreqY),
       dominantFreqZ: safeNumber(payload.dominantFreqZ),
       dominantFreqRes: safeNumber(payload.dominantFreqRes),
-
+  
       isoZone: payload.isoZone || "-",
       isoStatus: payload.isoStatus || "-",
-
+    };
+  
+    await db.collection("medicoes").add({
+      ...resumo,
+      samplingFrequency: chunkDoc.samplingFrequency,
+      samples: chunkDoc.totalChunks * chunkDoc.samplesInChunk,
+      measurementDurationSec:
+        (chunkDoc.totalChunks * chunkDoc.samplesInChunk) /
+        chunkDoc.samplingFrequency,
+  
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       type: "medicao",
     });
-
+  
     console.log(`Resumo da medição criado: ${chunkDoc.measurementId}`);
+
+    salvarInfluxResumo(resumo);
   }
-  salvarInfluxResumo(payload);
 }
 
 async function handleResumo(payload) {
@@ -280,6 +284,7 @@ async function handleMedicao(payload) {
 }
 
 function salvarInfluxResumo(data) {
+  console.log("Salvando resumo no Influx:", data.measurementId);
   const point = new Point("vibracao")
     .tag("machineId", data.machineId)
     .floatField("vrmsVelGlobal", data.vrmsVelGlobal || 0)
@@ -291,6 +296,9 @@ function salvarInfluxResumo(data) {
     .stringField("isoStatus", data.isoStatus || "");
 
   writeApi.writePoint(point);
+  writeApi.flush().catch((err) => {
+    console.error("Erro ao enviar para Influx:", err);
+  });
 }
 
 function validateResumo(payload) {
