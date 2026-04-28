@@ -11,6 +11,7 @@ const writeApi = influx.getWriteApi(
   process.env.INFLUX_ORG,
   process.env.INFLUX_BUCKET
 );
+const queryApi = influx.getQueryApi(process.env.INFLUX_ORG);
 const express = require("express");
 const mqtt = require("mqtt");
 
@@ -597,6 +598,47 @@ app.get("/", (req, res) => {
     service: "vibra_backend",
     status: "online",
   });
+});
+app.get("/tendencia_influx", async (req, res) => {
+  try {
+    const machineId = req.query.machineId || "motor_01";
+
+    const query = `
+      from(bucket: "${process.env.INFLUX_BUCKET}")
+        |> range(start: -24h)
+        |> filter(fn: (r) => r._measurement == "vibracao")
+        |> filter(fn: (r) => r.machineId == "${machineId}")
+        |> filter(fn: (r) => r._field == "vrmsVelGlobal")
+        |> sort(columns: ["_time"])
+    `;
+
+    const pontos = [];
+
+    await new Promise((resolve, reject) => {
+      queryApi.queryRows(query, {
+        next(row, tableMeta) {
+          const o = tableMeta.toObject(row);
+
+          pontos.push({
+            time: o._time,
+            value: o._value,
+            machineId: o.machineId,
+          });
+        },
+        error(error) {
+          reject(error);
+        },
+        complete() {
+          resolve();
+        },
+      });
+    });
+
+    res.json({ ok: true, pontos });
+  } catch (error) {
+    console.error("Erro GET /tendencia_influx:", error);
+    res.status(500).json({ ok: false, error: error.message });
+  }
 });
 app.listen(PORT, () => {
   console.log(`HTTP server rodando na porta ${PORT}`);
