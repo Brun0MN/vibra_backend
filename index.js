@@ -59,6 +59,9 @@ client.on("reconnect", () => {
 client.on("connect", () => {
   console.log("Conectado ao broker MQTT");
 
+  client.subscribe("vibracao/+/resultado_resumo");
+  client.subscribe("vibracao/+/resultado_fft");
+
   client.subscribe("vibracao/+/resultado", (err) => {
     if (err) {
       console.error("Erro ao assinar vibracao/+/resultado:", err);
@@ -93,6 +96,30 @@ client.on("connect", () => {
 });
 
 client.on("message", async (topic, messageBuffer) => {
+
+  if (topic.includes("/resultado_resumo")) {
+    try {
+      const data = JSON.parse(messageBuffer.toString());
+      await salvarResumoInflux(data);
+      console.log(`Resumo Influx salvo: ${data.measurementId}`);
+    } catch (error) {
+      console.error("Erro resultado_resumo:", error);
+    }
+    return;
+  }
+  
+  if (topic.includes("/resultado_fft")) {
+    try {
+      const data = JSON.parse(messageBuffer.toString());
+      await salvarFFTInflux(data);
+      console.log(
+        `FFT Influx salva: ${data.chunkIndex + 1}/${data.totalChunks} - ${data.measurementId}`
+      );
+    } catch (error) {
+      console.error("Erro resultado_fft:", error);
+    }
+    return;
+  }
 
   if (topic.includes("/resultado")) {
     try {
@@ -136,6 +163,53 @@ client.on("message", async (topic, messageBuffer) => {
   //   console.error("Erro ao processar mensagem MQTT:", error);
   // }
 });
+
+async function salvarResumoInflux(data) {
+  const p = new Point("vibracao_resumo")
+    .tag("machineId", data.machineId || "desconhecido")
+    .tag("sensorId", data.sensorId || "desconhecido")
+    .tag("measurementId", data.measurementId || "sem_id")
+    .floatField("vrmsVelGlobal", safeNumber(data.vrmsVelGlobal))
+    .floatField("vrmsGlobal", safeNumber(data.vrmsGlobal))
+    .floatField("dominantFreqX", safeNumber(data.dominantFreqX))
+    .floatField("dominantFreqY", safeNumber(data.dominantFreqY))
+    .floatField("dominantFreqZ", safeNumber(data.dominantFreqZ))
+    .floatField("dominantFreqRes", safeNumber(data.dominantFreqRes))
+    .stringField("isoZone", data.isoZone || "-")
+    .stringField("isoStatus", data.isoStatus || "-");
+
+  writeApi.writePoint(p);
+  await writeApi.flush();
+}
+
+async function salvarFFTInflux(data) {
+  const fftFreq = sanitizeArray(data.fftFreq);
+  const fftX = sanitizeArray(data.fftX);
+  const fftY = sanitizeArray(data.fftY);
+  const fftZ = sanitizeArray(data.fftZ);
+  const fftRes = sanitizeArray(data.fftRes);
+
+  function writeFFT(eixo, valores) {
+    for (let i = 0; i < fftFreq.length && i < valores.length; i++) {
+      const p = new Point("vibracao_fft")
+        .tag("machineId", data.machineId || "desconhecido")
+        .tag("sensorId", data.sensorId || "desconhecido")
+        .tag("measurementId", data.measurementId || "sem_id")
+        .tag("eixo", eixo)
+        .floatField("freq", safeNumber(fftFreq[i]))
+        .floatField("amplitude", safeNumber(valores[i]));
+
+      writeApi.writePoint(p);
+    }
+  }
+
+  writeFFT("X", fftX);
+  writeFFT("Y", fftY);
+  writeFFT("Z", fftZ);
+  writeFFT("Res", fftRes);
+
+  await writeApi.flush();
+}
 
 async function salvarChunk(payload) {
   if (!payload.measurementId) {
