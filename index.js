@@ -855,6 +855,60 @@ app.get("/fft_influx", async (req, res) => {
     res.status(500).json({ ok: false, error: error.message });
   }
 });
+
+app.get("/medicoes_influx", async (req, res) => {
+  try {
+    const machineId = req.query.machineId || "motor_01";
+
+    const query = `
+      from(bucket: "${process.env.INFLUX_BUCKET}")
+        |> range(start: -30d)
+        |> filter(fn: (r) => r._measurement == "vibracao_resumo")
+        |> filter(fn: (r) => r.machineId == "${machineId}")
+        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+        |> sort(columns: ["_time"], desc: true)
+    `;
+
+    const medicoes = [];
+
+    await new Promise((resolve, reject) => {
+      queryApi.queryRows(query, {
+        next(row, tableMeta) {
+          const o = tableMeta.toObject(row);
+
+          medicoes.push({
+            measurementId: o.measurementId,
+            machineId: o.machineId,
+            sensorId: o.sensorId,
+            createdAt: o._time,
+
+            vrmsVelGlobal: o.vrmsVelGlobal ?? 0,
+            vrmsGlobal: o.vrmsGlobal ?? 0,
+
+            dominantFreqX: o.dominantFreqX ?? 0,
+            dominantFreqY: o.dominantFreqY ?? 0,
+            dominantFreqZ: o.dominantFreqZ ?? 0,
+            dominantFreqRes: o.dominantFreqRes ?? 0,
+
+            isoZone: o.isoZone ?? "-",
+            isoStatus: o.isoStatus ?? "-",
+          });
+        },
+        error(error) {
+          reject(error);
+        },
+        complete() {
+          resolve();
+        },
+      });
+    });
+
+    res.json({ ok: true, medicoes });
+  } catch (error) {
+    console.error("Erro GET /medicoes_influx:", error);
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
 app.listen(PORT, () => {
   console.log(`HTTP server rodando na porta ${PORT}`);
 });
