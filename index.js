@@ -59,8 +59,21 @@ client.on("reconnect", () => {
 client.on("connect", () => {
   console.log("Conectado ao broker MQTT");
 
-  client.subscribe("vibracao/+/resultado_resumo");
-  client.subscribe("vibracao/+/resultado_fft");
+  client.subscribe("vibracao/+/resultado_resumo", (err) => {
+    if (err) {
+      console.error("Erro ao assinar resultado_resumo:", err);
+    } else {
+      console.log("Assinado em vibracao/+/resultado_resumo");
+    }
+  });
+  
+  client.subscribe("vibracao/+/resultado_fft", (err) => {
+    if (err) {
+      console.error("Erro ao assinar resultado_fft:", err);
+    } else {
+      console.log("Assinado em vibracao/+/resultado_fft");
+    }
+  });
 
   client.subscribe("vibracao/+/resultado", (err) => {
     if (err) {
