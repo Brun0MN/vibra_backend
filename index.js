@@ -799,6 +799,62 @@ app.get("/tendencia_influx", async (req, res) => {
     res.status(500).json({ ok: false, error: error.message });
   }
 });
+
+app.get("/fft_influx", async (req, res) => {
+  try {
+    const measurementId = req.query.measurementId;
+    const eixo = req.query.eixo || "X";
+
+    if (!measurementId) {
+      return res.status(400).json({
+        ok: false,
+        error: "measurementId obrigatório",
+      });
+    }
+
+    const query = `
+      from(bucket: "${process.env.INFLUX_BUCKET}")
+        |> range(start: -30d)
+        |> filter(fn: (r) => r._measurement == "vibracao_fft")
+        |> filter(fn: (r) => r.measurementId == "${measurementId}")
+        |> filter(fn: (r) => r.eixo == "${eixo}")
+        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+        |> keep(columns: ["freq", "amplitude"])
+        |> sort(columns: ["freq"])
+    `;
+
+    const pontos = [];
+
+    await new Promise((resolve, reject) => {
+      queryApi.queryRows(query, {
+        next(row, tableMeta) {
+          const o = tableMeta.toObject(row);
+          pontos.push({
+            freq: Number(o.freq),
+            amplitude: Number(o.amplitude),
+          });
+        },
+        error(error) {
+          reject(error);
+        },
+        complete() {
+          resolve();
+        },
+      });
+    });
+
+    res.json({
+      ok: true,
+      measurementId,
+      eixo,
+      freq: pontos.map((p) => p.freq),
+      amp: pontos.map((p) => p.amplitude),
+    });
+  } catch (error) {
+    console.error("Erro GET /fft_influx:", error);
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
 app.listen(PORT, () => {
   console.log(`HTTP server rodando na porta ${PORT}`);
 });
