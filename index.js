@@ -188,7 +188,7 @@ async function salvarResumoInflux(data) {
     .floatField("dominantFreqY", safeNumber(data.dominantFreqY))
     .floatField("dominantFreqZ", safeNumber(data.dominantFreqZ))
     .floatField("dominantFreqRes", safeNumber(data.dominantFreqRes))
-    .floatField("measurementDurationSec", data.measurementDurationSec || 0)
+    .floatField("measurementDurationSec", safeNumber(data.measurementDurationSec))
     .stringField("isoZone", data.isoZone || "-")
     .stringField("isoStatus", data.isoStatus || "-");
 
@@ -890,6 +890,7 @@ app.get("/medicoes_influx", async (req, res) => {
             dominantFreqY: o.dominantFreqY ?? 0,
             dominantFreqZ: o.dominantFreqZ ?? 0,
             dominantFreqRes: o.dominantFreqRes ?? 0,
+            measurementDurationSec: o.measurementDurationSec ?? 0,
 
             isoZone: o.isoZone ?? "-",
             isoStatus: o.isoStatus ?? "-",
