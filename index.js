@@ -768,7 +768,7 @@ app.get("/tendencia_influx", async (req, res) => {
         |> filter(fn: (r) => r._measurement == "vibracao_resumo")
         |> filter(fn: (r) => r.machineId == "${machineId}")
         |> filter(fn: (r) => r._field == "vrmsVelGlobal")
-        |> sort(columns: ["_time"])
+        |> sort(columns: ["_time"], desc: false)
     `;
 
     const pontos = [];
