@@ -765,7 +765,7 @@ app.get("/tendencia_influx", async (req, res) => {
     const query = `
       from(bucket: "${process.env.INFLUX_BUCKET}")
         |> range(start: -24h)
-        |> filter(fn: (r) => r._measurement == "vibracao")
+        |> filter(fn: (r) => r._measurement == "vibracao_resumo")
         |> filter(fn: (r) => r.machineId == "${machineId}")
         |> filter(fn: (r) => r._field == "vrmsVelGlobal")
         |> sort(columns: ["_time"])
