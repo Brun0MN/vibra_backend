@@ -188,6 +188,7 @@ async function salvarResumoInflux(data) {
     .floatField("dominantFreqY", safeNumber(data.dominantFreqY))
     .floatField("dominantFreqZ", safeNumber(data.dominantFreqZ))
     .floatField("dominantFreqRes", safeNumber(data.dominantFreqRes))
+    .floatField("measurementDurationSec", data.measurementDurationSec || 0)
     .stringField("isoZone", data.isoZone || "-")
     .stringField("isoStatus", data.isoStatus || "-");
 
