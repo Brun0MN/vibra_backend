@@ -193,6 +193,21 @@ async function salvarResumoInflux(data) {
     .stringField("isoStatus", data.isoStatus || "-");
 
   writeApi.writePoint(p);
+
+  const timeAxis = data.timeAxis || [];
+  const timeRms = data.timeRms || [];
+
+  for (let i = 0; i < timeAxis.length && i < timeRms.length; i++) {
+    const pTempo = new Point("vibracao_tempo")
+      .tag("machineId", data.machineId || "desconhecido")
+      .tag("sensorId", data.sensorId || "desconhecido")
+      .tag("measurementId", data.measurementId || "sem_id")
+      .floatField("t", safeNumber(timeAxis[i]))
+      .floatField("rms", safeNumber(timeRms[i]));
+
+    writeApi.writePoint(pTempo);
+  }
+
   await writeApi.flush();
 }
 
