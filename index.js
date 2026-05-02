@@ -177,49 +177,13 @@ client.on("message", async (topic, messageBuffer) => {
   // }
 });
 
-// async function salvarResumoInflux(data) {
-//   const p = new Point("vibracao_resumo")
-//     .tag("machineId", data.machineId || "desconhecido")
-//     .tag("sensorId", data.sensorId || "desconhecido")
-//     .tag("measurementId", data.measurementId || "sem_id")
-//     .floatField("vrmsVelGlobal", safeNumber(data.vrmsVelGlobal))
-//     .floatField("vrmsGlobal", safeNumber(data.vrmsGlobal))
-//     .floatField("dominantFreqX", safeNumber(data.dominantFreqX))
-//     .floatField("dominantFreqY", safeNumber(data.dominantFreqY))
-//     .floatField("dominantFreqZ", safeNumber(data.dominantFreqZ))
-//     .floatField("dominantFreqRes", safeNumber(data.dominantFreqRes))
-//     .floatField("measurementDurationSec", safeNumber(data.measurementDurationSec))
-//     .stringField("isoZone", data.isoZone || "-")
-//     .stringField("isoStatus", data.isoStatus || "-");
-
-//   writeApi.writePoint(p);
-
-//   const timeAxis = data.timeAxis || [];
-//   const timeRms = data.timeRms || [];
-
-//   for (let i = 0; i < timeAxis.length && i < timeRms.length; i++) {
-//     const pTempo = new Point("vibracao_tempo")
-//       .tag("machineId", data.machineId || "desconhecido")
-//       .tag("sensorId", data.sensorId || "desconhecido")
-//       .tag("measurementId", data.measurementId || "sem_id")
-//       .floatField("t", safeNumber(timeAxis[i]))
-//       .floatField("rms", safeNumber(timeRms[i]));
-
-//     writeApi.writePoint(pTempo);
-//   }
-
-//   await writeApi.flush();
-// }
-
 async function salvarResumoInflux(data) {
   const p = new Point("vibracao_resumo")
     .tag("machineId", data.machineId || "desconhecido")
     .tag("sensorId", data.sensorId || "desconhecido")
     .tag("measurementId", data.measurementId || "sem_id")
-    .floatField("vrmsVelX", safeNumber(data.vrmsVelX))
-    .floatField("vrmsVelY", safeNumber(data.vrmsVelY))
-    .floatField("vrmsVelZ", safeNumber(data.vrmsVelZ))
-    .floatField("vrmsVelGlobal", safeNumber(data.vrmsVelGlobal))  // resultado geral
+    .floatField("vrmsVelGlobal", safeNumber(data.vrmsVelGlobal))
+    .floatField("vrmsGlobal", safeNumber(data.vrmsGlobal))
     .floatField("dominantFreqX", safeNumber(data.dominantFreqX))
     .floatField("dominantFreqY", safeNumber(data.dominantFreqY))
     .floatField("dominantFreqZ", safeNumber(data.dominantFreqZ))
@@ -229,8 +193,44 @@ async function salvarResumoInflux(data) {
     .stringField("isoStatus", data.isoStatus || "-");
 
   writeApi.writePoint(p);
+
+  const timeAxis = data.timeAxis || [];
+  const timeRms = data.timeRms || [];
+
+  for (let i = 0; i < timeAxis.length && i < timeRms.length; i++) {
+    const pTempo = new Point("vibracao_tempo")
+      .tag("machineId", data.machineId || "desconhecido")
+      .tag("sensorId", data.sensorId || "desconhecido")
+      .tag("measurementId", data.measurementId || "sem_id")
+      .floatField("t", safeNumber(timeAxis[i]))
+      .floatField("rms", safeNumber(timeRms[i]));
+
+    writeApi.writePoint(pTempo);
+  }
+
   await writeApi.flush();
 }
+
+// async function salvarResumoInflux(data) {
+//   const p = new Point("vibracao_resumo")
+//     .tag("machineId", data.machineId || "desconhecido")
+//     .tag("sensorId", data.sensorId || "desconhecido")
+//     .tag("measurementId", data.measurementId || "sem_id")
+//     .floatField("vrmsVelX", safeNumber(data.vrmsVelX))
+//     .floatField("vrmsVelY", safeNumber(data.vrmsVelY))
+//     .floatField("vrmsVelZ", safeNumber(data.vrmsVelZ))
+//     .floatField("vrmsVelGlobal", safeNumber(data.vrmsVelGlobal))  // resultado geral
+//     .floatField("dominantFreqX", safeNumber(data.dominantFreqX))
+//     .floatField("dominantFreqY", safeNumber(data.dominantFreqY))
+//     .floatField("dominantFreqZ", safeNumber(data.dominantFreqZ))
+//     .floatField("dominantFreqRes", safeNumber(data.dominantFreqRes))
+//     .floatField("measurementDurationSec", safeNumber(data.measurementDurationSec))
+//     .stringField("isoZone", data.isoZone || "-")
+//     .stringField("isoStatus", data.isoStatus || "-");
+
+//   writeApi.writePoint(p);
+//   await writeApi.flush();
+// }
 
 async function salvarFFTInflux(data) {
   const fftFreq = sanitizeArray(data.fftFreq);
