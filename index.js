@@ -1,3 +1,5 @@
+
+
 console.log("Backend iniciando...");
 
 const { InfluxDB, Point } = require('@influxdata/influxdb-client');
@@ -995,3 +997,4 @@ app.get("/medicoes_influx", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`HTTP server rodando na porta ${PORT}`);
 });
+
