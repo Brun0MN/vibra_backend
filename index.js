@@ -1,5 +1,3 @@
-
-
 console.log("Backend iniciando...");
 
 const { InfluxDB, Point } = require('@influxdata/influxdb-client');
@@ -196,22 +194,23 @@ async function salvarResumoInflux(data) {
 
   writeApi.writePoint(p);
 
-  const timeAxis = data.timeAxis || [];
-  const timeRms = data.timeRms || [];
-
-  for (let i = 0; i < timeAxis.length && i < timeRms.length; i++) {
+  const timeRms = sanitizeArray(data.timeRmsRes || data.timeRms || []);
+  const duracao = safeNumber(data.measurementDurationSec || 0);
+  
+  for (let i = 0; i < timeRms.length; i++) {
+    const t = timeRms.length > 1 && duracao > 0
+      ? (i * duracao) / (timeRms.length - 1)
+      : i;
+  
     const pTempo = new Point("vibracao_tempo")
       .tag("machineId", data.machineId || "desconhecido")
       .tag("sensorId", data.sensorId || "desconhecido")
       .tag("measurementId", data.measurementId || "sem_id")
-      .floatField("t", safeNumber(timeAxis[i]))
+      .floatField("t", safeNumber(t))
       .floatField("rms", safeNumber(timeRms[i]));
-
+  
     writeApi.writePoint(pTempo);
   }
-
-  await writeApi.flush();
-}
 
 // async function salvarResumoInflux(data) {
 //   const p = new Point("vibracao_resumo")
@@ -997,4 +996,3 @@ app.get("/medicoes_influx", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`HTTP server rodando na porta ${PORT}`);
 });
-
