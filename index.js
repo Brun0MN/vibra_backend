@@ -1012,6 +1012,54 @@ app.get("/medicoes_influx", async (req, res) => {
     res.status(500).json({ ok: false, error: error.message });
   }
 });
+
+app.get("/tempo_acel_influx", async (req, res) => {
+  try {
+    const measurementId = req.query.measurementId;
+
+    if (!measurementId) {
+      return res.status(400).json({
+        ok: false,
+        error: "measurementId obrigatório",
+      });
+    }
+
+    const query = `
+      from(bucket: "${process.env.INFLUX_BUCKET}")
+        |> range(start: -30d)
+        |> filter(fn: (r) => r._measurement == "vibracao_tempo_acel")
+        |> filter(fn: (r) => r.measurementId == "${measurementId}")
+        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+        |> sort(columns: ["t"])
+    `;
+
+    const pontos = [];
+
+    await new Promise((resolve, reject) => {
+      queryApi.queryRows(query, {
+        next(row, tableMeta) {
+          const o = tableMeta.toObject(row);
+
+          pontos.push({
+            t: o.t,
+            rms: o.rms,
+          });
+        },
+        error(error) {
+          reject(error);
+        },
+        complete() {
+          resolve();
+        },
+      });
+    });
+
+    res.json({ ok: true, pontos });
+  } catch (error) {
+    console.error("Erro /tempo_acel_influx:", error);
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
 app.listen(PORT, () => {
   console.log(`HTTP server rodando na porta ${PORT}`);
 });
