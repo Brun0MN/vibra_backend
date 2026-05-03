@@ -211,6 +211,24 @@ async function salvarResumoInflux(data) {
   
     writeApi.writePoint(pTempo);
   }
+
+  const timeAccRms = sanitizeArray(data.timeAccRms || []);
+  const duracaoAcc = safeNumber(data.measurementDurationSec || 0);
+
+  for (let i = 0; i < timeAccRms.length; i++) {
+    const t = timeAccRms.length > 1 && duracaoAcc > 0
+      ? (i * duracaoAcc) / (timeAccRms.length - 1)
+      : i;
+
+    const pTempoAcc = new Point("vibracao_tempo_acel")
+      .tag("machineId", data.machineId || "desconhecido")
+      .tag("sensorId", data.sensorId || "desconhecido")
+      .tag("measurementId", data.measurementId || "sem_id")
+      .floatField("t", safeNumber(t))
+      .floatField("rms", safeNumber(timeAccRms[i]));
+
+    writeApi.writePoint(pTempoAcc);
+  }
 }
 
 // async function salvarResumoInflux(data) {
