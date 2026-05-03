@@ -211,6 +211,7 @@ async function salvarResumoInflux(data) {
   
     writeApi.writePoint(pTempo);
   }
+}
 
 // async function salvarResumoInflux(data) {
 //   const p = new Point("vibracao_resumo")
