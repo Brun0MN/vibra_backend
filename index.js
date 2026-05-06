@@ -833,9 +833,6 @@ app.get("/tendencia_influx", async (req, res) => {
       |> filter(fn: (r) => r._measurement == "vibracao_resumo")
       |> filter(fn: (r) => r.machineId == "${machineId}")
       |> filter(fn: (r) => r._field == "vrmsVelGlobal")
-      |> group()
-      |> sort(columns: ["_time"])
-      |> tail(n: 10)
       |> sort(columns: ["_time"])
   `;
 
@@ -860,7 +857,11 @@ app.get("/tendencia_influx", async (req, res) => {
         },
       });
     });
+    pontos.sort((a, b) => new Date(a.time) - new Date(b.time));
 
+    const ultimos50 = pontos.slice(-50);
+
+    res.json({ ok: true, pontos: ultimos50 });
     res.json({ ok: true, pontos });
   } catch (error) {
     console.error("Erro GET /tendencia_influx:", error);
