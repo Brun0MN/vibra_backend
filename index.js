@@ -827,7 +827,7 @@ app.get("/tendencia_influx", async (req, res) => {
         |> filter(fn: (r) => r._field == "vrmsVelGlobal")
         |> group()
         |> sort(columns: ["_time"])
-        |> tail(n: 10)
+        |> tail(n: 30)
         |> sort(columns: ["_time"])
     `;
 
@@ -1091,7 +1091,7 @@ app.get("/tendencia_acel_influx", async (req, res) => {
         |> filter(fn: (r) => r._field == "vrmsGlobal")
         |> group()
         |> sort(columns: ["_time"])
-        |> tail(n: 10)
+        |> tail(n: 30)
         |> sort(columns: ["_time"])
     `;
 
