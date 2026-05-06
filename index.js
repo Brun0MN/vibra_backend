@@ -1062,8 +1062,8 @@ app.get("/tempo_acel_influx", async (req, res) => {
       |> range(start: -30d)
       |> filter(fn: (r) => r._measurement == "vibracao_tempo_acel")
       |> filter(fn: (r) => r.measurementId == "${measurementId}")
-      |> group()
       |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+      |> group()
       |> sort(columns: ["t"])
       |> limit(n: 20)
   `;
