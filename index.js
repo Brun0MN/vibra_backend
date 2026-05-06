@@ -1059,7 +1059,7 @@ app.get("/tempo_acel_influx", async (req, res) => {
     // `;
     const query = `
     from(bucket: "${process.env.INFLUX_BUCKET}")
-      |> range(start: 0)
+      |> range(start: -30d)
       |> filter(fn: (r) => r._measurement == "vibracao_tempo_acel")
       |> filter(fn: (r) => r.measurementId == "${measurementId}")
       |> group()
