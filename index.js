@@ -819,14 +819,23 @@ app.get("/tendencia_influx", async (req, res) => {
   try {
     const machineId = req.query.machineId || "motor_01";
 
+    // const query = `
+    //   from(bucket: "${process.env.INFLUX_BUCKET}")
+    //     |> range(start: -24h)
+    //     |> filter(fn: (r) => r._measurement == "vibracao_resumo")
+    //     |> filter(fn: (r) => r.machineId == "${machineId}")
+    //     |> filter(fn: (r) => r._field == "vrmsVelGlobal")
+    //     |> sort(columns: ["_time"], desc: false)
+    // `;
     const query = `
-      from(bucket: "${process.env.INFLUX_BUCKET}")
-        |> range(start: -24h)
-        |> filter(fn: (r) => r._measurement == "vibracao_resumo")
-        |> filter(fn: (r) => r.machineId == "${machineId}")
-        |> filter(fn: (r) => r._field == "vrmsVelGlobal")
-        |> sort(columns: ["_time"], desc: false)
-    `;
+    from(bucket: "${process.env.INFLUX_BUCKET}")
+      |> range(start: 0)
+      |> filter(fn: (r) => r._measurement == "vibracao_resumo")
+      |> filter(fn: (r) => r.machineId == "${machineId}")
+      |> filter(fn: (r) => r._field == "vrmsVelGlobal")
+      |> sort(columns: ["_time"], desc: false)
+      |> tail(n: 20)
+  `;
 
     const pontos = [];
 
@@ -1040,14 +1049,23 @@ app.get("/tempo_acel_influx", async (req, res) => {
       });
     }
 
+    // const query = `
+    //   from(bucket: "${process.env.INFLUX_BUCKET}")
+    //     |> range(start: -30d)
+    //     |> filter(fn: (r) => r._measurement == "vibracao_tempo_acel")
+    //     |> filter(fn: (r) => r.measurementId == "${measurementId}")
+    //     |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+    //     |> sort(columns: ["t"])
+    // `;
     const query = `
-      from(bucket: "${process.env.INFLUX_BUCKET}")
-        |> range(start: -30d)
-        |> filter(fn: (r) => r._measurement == "vibracao_tempo_acel")
-        |> filter(fn: (r) => r.measurementId == "${measurementId}")
-        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-        |> sort(columns: ["t"])
-    `;
+    from(bucket: "${process.env.INFLUX_BUCKET}")
+      |> range(start: 0)
+      |> filter(fn: (r) => r._measurement == "vibracao_tempo_acel")
+      |> filter(fn: (r) => r.measurementId == "${measurementId}")
+      |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+      |> sort(columns: ["t"])
+      |> tail(n: 20)
+  `;
 
     const pontos = [];
 
