@@ -960,16 +960,32 @@ app.get("/tempo_influx", async (req, res) => {
 
 app.get("/medicoes_influx", async (req, res) => {
   try {
-    const machineId = req.query.machineId || "motor_01";
-
-    const query = `
+    // const machineId = req.query.machineId || "motor_01";
+    const machineId = req.query.machineId;
+    let query = `
       from(bucket: "${process.env.INFLUX_BUCKET}")
         |> range(start: -30d)
         |> filter(fn: (r) => r._measurement == "vibracao_resumo")
-        |> filter(fn: (r) => r.machineId == "${machineId}")
-        |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-        |> sort(columns: ["_time"], desc: true)
     `;
+
+    if (machineId && machineId.trim() !== "") {
+      query += `
+        |> filter(fn: (r) => r.machineId == "${machineId}")
+      `;
+    }
+
+    query += `
+      |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+      |> sort(columns: ["_time"], desc: true)
+    `;
+    // const query = `
+    //   from(bucket: "${process.env.INFLUX_BUCKET}")
+    //     |> range(start: -30d)
+    //     |> filter(fn: (r) => r._measurement == "vibracao_resumo")
+    //     |> filter(fn: (r) => r.machineId == "${machineId}")
+    //     |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+    //     |> sort(columns: ["_time"], desc: true)
+    // `;
 
     const medicoes = [];
 
