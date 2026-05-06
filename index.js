@@ -1105,6 +1105,7 @@ app.get("/tendencia_acel_influx", async (req, res) => {
         |> filter(fn: (r) => r.machineId == "${machineId}")
         |> filter(fn: (r) => r._field == "vrmsGlobal")
         |> sort(columns: ["_time"])
+        |> limit(20)
     `;
 
     const pontos = [];
