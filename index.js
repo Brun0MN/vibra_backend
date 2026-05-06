@@ -1062,6 +1062,7 @@ app.get("/tempo_acel_influx", async (req, res) => {
       |> range(start: 0)
       |> filter(fn: (r) => r._measurement == "vibracao_tempo_acel")
       |> filter(fn: (r) => r.measurementId == "${measurementId}")
+      |> group()
       |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
       |> sort(columns: ["t"])
       |> limit(n: 20)
@@ -1104,8 +1105,9 @@ app.get("/tendencia_acel_influx", async (req, res) => {
         |> filter(fn: (r) => r._measurement == "vibracao_resumo")
         |> filter(fn: (r) => r.machineId == "${machineId}")
         |> filter(fn: (r) => r._field == "vrmsGlobal")
+        |> group()
         |> sort(columns: ["_time"])
-        |> limit(20)
+        |> limit(n: 20)
     `;
 
     const pontos = [];
