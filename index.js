@@ -819,22 +819,17 @@ app.get("/tendencia_influx", async (req, res) => {
   try {
     const machineId = req.query.machineId || "motor_01";
 
-    // const query = `
-    //   from(bucket: "${process.env.INFLUX_BUCKET}")
-    //     |> range(start: -24h)
-    //     |> filter(fn: (r) => r._measurement == "vibracao_resumo")
-    //     |> filter(fn: (r) => r.machineId == "${machineId}")
-    //     |> filter(fn: (r) => r._field == "vrmsVelGlobal")
-    //     |> sort(columns: ["_time"], desc: false)
-    // `;
     const query = `
-    from(bucket: "${process.env.INFLUX_BUCKET}")
-      |> range(start: -30d)
-      |> filter(fn: (r) => r._measurement == "vibracao_resumo")
-      |> filter(fn: (r) => r.machineId == "${machineId}")
-      |> filter(fn: (r) => r._field == "vrmsVelGlobal")
-      |> sort(columns: ["_time"])
-  `;
+      from(bucket: "${process.env.INFLUX_BUCKET}")
+        |> range(start: -30d)
+        |> filter(fn: (r) => r._measurement == "vibracao_resumo")
+        |> filter(fn: (r) => r.machineId == "${machineId}")
+        |> filter(fn: (r) => r._field == "vrmsGlobal")
+        |> group()
+        |> sort(columns: ["_time"])
+        |> tail(n: 10)
+        |> sort(columns: ["_time"])
+    `;
 
     const pontos = [];
 
@@ -857,11 +852,7 @@ app.get("/tendencia_influx", async (req, res) => {
         },
       });
     });
-    pontos.sort((a, b) => new Date(a.time) - new Date(b.time));
 
-    const ultimos50 = pontos.slice(-50);
-
-    res.json({ ok: true, pontos: ultimos50 });
     res.json({ ok: true, pontos });
   } catch (error) {
     console.error("Erro GET /tendencia_influx:", error);
