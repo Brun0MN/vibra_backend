@@ -1121,7 +1121,8 @@ app.post("/iniciar_medicao", (req, res) => {
   const machineId = req.body.machineId || "motor_01";
   const duracao = req.body.duracao || 5;
 
-  const topic = `vibracao/${machineId}/comando`;
+  // const topic = `vibracao/${machineId}/comando`;
+  const topic = `vibracao/comando`;
 
   const payload = JSON.stringify({
     acao: "iniciar_medicao",
