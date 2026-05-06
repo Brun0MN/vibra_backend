@@ -833,8 +833,9 @@ app.get("/tendencia_influx", async (req, res) => {
       |> filter(fn: (r) => r._measurement == "vibracao_resumo")
       |> filter(fn: (r) => r.machineId == "${machineId}")
       |> filter(fn: (r) => r._field == "vrmsVelGlobal")
-      |> sort(columns: ["_time"], desc: false)
-      |> limit(n: 20)
+      |> sort(columns: ["_time"])
+      |> tail(n: 50)
+      |> sort(columns: ["_time"])
   `;
 
     const pontos = [];
@@ -1063,9 +1064,9 @@ app.get("/tempo_acel_influx", async (req, res) => {
       |> filter(fn: (r) => r._measurement == "vibracao_tempo_acel")
       |> filter(fn: (r) => r.measurementId == "${measurementId}")
       |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-      |> group()
-      |> sort(columns: ["t"])
-      |> limit(n: 20)
+      |> sort(columns: ["_time"])
+      |> tail(n: 50)
+      |> sort(columns: ["_time"])
   `;
 
     const pontos = [];
