@@ -1101,6 +1101,26 @@ app.get("/tendencia_acel_influx", async (req, res) => {
     res.status(500).json({ ok: false, error: error.message });
   }
 });
+app.post("/iniciar_medicao", (req, res) => {
+  const machineId = req.body.machineId || "motor_01";
+  const duracao = req.body.duracao || 5;
+
+  const topic = `vibracao/${machineId}/comando`;
+
+  const payload = JSON.stringify({
+    acao: "iniciar_medicao",
+    duracao,
+    machineId,
+  });
+
+  client.publish(topic, payload, (err) => {
+    if (err) {
+      return res.status(500).json({ ok: false, error: err.message });
+    }
+
+    res.json({ ok: true, topic, payload });
+  });
+});
 app.listen(PORT, () => {
   console.log(`HTTP server rodando na porta ${PORT}`);
 });
