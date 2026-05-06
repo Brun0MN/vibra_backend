@@ -1096,6 +1096,7 @@ app.get("/tendencia_acel_influx", async (req, res) => {
         |> filter(fn: (r) => r._measurement == "vibracao_resumo")
         |> filter(fn: (r) => r.machineId == "${machineId}")
         |> filter(fn: (r) => r._field == "vrmsGlobal")
+        |> group()
         |> sort(columns: ["_time"])
         |> tail(n: 10)
         |> sort(columns: ["_time"])
