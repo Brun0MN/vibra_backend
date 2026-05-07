@@ -1134,6 +1134,7 @@ app.post("/iniciar_medicao", (req, res) => {
     acao: "iniciar_medicao",
     duracao,
     machineId,
+    isoCategory: req.body.isoCategory || "catILe200",
   });
 
   client.publish(topic, payload, (err) => {
