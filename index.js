@@ -875,15 +875,20 @@ app.get("/tendencia_influx", async (req, res) => {
         next(row, tableMeta) {
           const o = tableMeta.toObject(row);
 
+          const alarm = getAlarmFromVrms(o._value);
+
           pontos.push({
             time: o._time,
             value: o._value,
             machineId: o.machineId,
+
+            alarmLevel: alarm.alarmLevel,
+            alarmMessage: alarm.alarmMessage,
             // alarmLevel: o.alarmLevel ?? "normal",
             // alarmMessage: o.alarmMessage ?? "",
-            alarmLevel: getAlarmFromVrms(o._value),
-            alarmMessage: getAlarmFromVrms(o._value),
           });
+
+
         },
         error(error) {
           reject(error);
