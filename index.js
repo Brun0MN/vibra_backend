@@ -178,6 +178,18 @@ client.on("message", async (topic, messageBuffer) => {
 });
 
 async function salvarResumoInflux(data) {
+  let alarmLevel = "normal";
+  let alarmMessage = "Operação normal";
+
+  if (data.isoZone === "Zona C") {
+    alarmLevel = "alerta";
+    alarmMessage = "Vibração em nível insatisfatório";
+  }
+
+  if (data.isoZone === "Zona D") {
+    alarmLevel = "critico";
+    alarmMessage = "Risco de dano à máquina";
+  }
   const p = new Point("vibracao_resumo")
     .tag("machineId", data.machineId || "desconhecido")
     .tag("sensorId", data.sensorId || "desconhecido")
@@ -190,7 +202,9 @@ async function salvarResumoInflux(data) {
     .floatField("dominantFreqRes", safeNumber(data.dominantFreqRes))
     .floatField("measurementDurationSec", safeNumber(data.measurementDurationSec))
     .stringField("isoZone", data.isoZone || "-")
-    .stringField("isoStatus", data.isoStatus || "-");
+    .stringField("isoStatus", data.isoStatus || "-")
+    .stringField("alarmLevel", alarmLevel)
+    .stringField("alarmMessage", alarmMessage);
 
   writeApi.writePoint(p);
 
@@ -842,6 +856,8 @@ app.get("/tendencia_influx", async (req, res) => {
             time: o._time,
             value: o._value,
             machineId: o.machineId,
+            alarmLevel: o.alarmLevel ?? "normal",
+            alarmMessage: o.alarmMessage ?? "",
           });
         },
         error(error) {
@@ -1001,6 +1017,8 @@ app.get("/medicoes_influx", async (req, res) => {
             measurementId: o.measurementId,
             machineId: o.machineId,
             sensorId: o.sensorId,
+            alarmLevel: o.alarmLevel ?? "normal",
+            alarmMessage: o.alarmMessage ?? "",
             createdAt: o._time,
 
             vrmsVelGlobal: o.vrmsVelGlobal ?? 0,
@@ -1106,6 +1124,8 @@ app.get("/tendencia_acel_influx", async (req, res) => {
             time: o._time,
             value: o._value,
             machineId: o.machineId,
+            alarmLevel: o.alarmLevel ?? "normal",
+            alarmMessage: o.alarmMessage ?? "",
           });
         },
         error(error) {
