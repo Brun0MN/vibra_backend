@@ -177,6 +177,29 @@ client.on("message", async (topic, messageBuffer) => {
   // }
 });
 
+function getAlarmFromVrms(vrms) {
+  const value = safeNumber(vrms);
+
+  if (value > 6.6) {
+    return {
+      alarmLevel: "critico",
+      alarmMessage: "Risco de dano à máquina",
+    };
+  }
+
+  if (value > 4.0) {
+    return {
+      alarmLevel: "alerta",
+      alarmMessage: "Vibração em nível insatisfatório",
+    };
+  }
+
+  return {
+    alarmLevel: "normal",
+    alarmMessage: "Operação normal",
+  };
+}
+
 async function salvarResumoInflux(data) {
   let alarmLevel = "normal";
   let alarmMessage = "Operação normal";
@@ -856,8 +879,10 @@ app.get("/tendencia_influx", async (req, res) => {
             time: o._time,
             value: o._value,
             machineId: o.machineId,
-            alarmLevel: o.alarmLevel ?? "normal",
-            alarmMessage: o.alarmMessage ?? "",
+            // alarmLevel: o.alarmLevel ?? "normal",
+            // alarmMessage: o.alarmMessage ?? "",
+            alarmLevel: getAlarmFromVrms(o._value),
+            alarmMessage: getAlarmFromVrms(o._value),
           });
         },
         error(error) {
