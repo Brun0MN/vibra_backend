@@ -244,9 +244,7 @@ async function salvarResumoInflux(data) {
       .tag("sensorId", data.sensorId || "desconhecido")
       .tag("measurementId", data.measurementId || "sem_id")
       .floatField("t", safeNumber(t))
-      .floatField("rms", safeNumber(timeRms[i]))
-      .stringField("alarmLevel", alarmLevel) 
-      .stringField("alarmMessage", alarmMessage);
+      .floatField("rms", safeNumber(timeRms[i]));
   
     writeApi.writePoint(pTempo);
   }
