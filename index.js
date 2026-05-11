@@ -217,6 +217,7 @@ async function salvarResumoInflux(data) {
     .tag("machineId", data.machineId || "desconhecido")
     .tag("sensorId", data.sensorId || "desconhecido")
     .tag("measurementId", data.measurementId || "sem_id")
+    .tag("isoCategory", data.isoCategory || "catILe200")
     .floatField("vrmsVelGlobal", safeNumber(data.vrmsVelGlobal))
     .floatField("vrmsGlobal", safeNumber(data.vrmsGlobal))
     .floatField("dominantFreqX", safeNumber(data.dominantFreqX))
@@ -1062,6 +1063,7 @@ app.get("/medicoes_influx", async (req, res) => {
 
             isoZone: o.isoZone ?? "-",
             isoStatus: o.isoStatus ?? "-",
+            isoCategory: o.isoCategory ?? "catILe200",
           });
         },
         error(error) {
