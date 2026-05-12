@@ -878,13 +878,23 @@ app.get("/tendencia_influx", async (req, res) => {
 
           // const alarm = getAlarmFromVrms(o._value);
 
+          // pontos.push({
+          //   time: o._time,
+          //   value: o._value,
+          //   machineId: o.machineId,
+
+          //   // alarmLevel: alarm.alarmLevel,
+          //   // alarmMessage: alarm.alarmMessage,
+          //   alarmLevel: o.alarmLevel ?? "normal",
+          //   alarmMessage: o.alarmMessage ?? "",
+          // });
+
           pontos.push({
             time: o._time,
             value: o._value,
             machineId: o.machineId,
-
-            // alarmLevel: alarm.alarmLevel,
-            // alarmMessage: alarm.alarmMessage,
+            isoCategory: o.isoCategory ?? "catILe200",
+          
             alarmLevel: o.alarmLevel ?? "normal",
             alarmMessage: o.alarmMessage ?? "",
           });
