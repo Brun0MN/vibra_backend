@@ -1209,6 +1209,52 @@ app.post("/iniciar_medicao", (req, res) => {
     res.json({ ok: true, topic, payload });
   });
 });
+app.get("/machines", async (req, res) => {
+  try {
+    const query = `
+      from(bucket: "${process.env.INFLUX_BUCKET}")
+        |> range(start: -365d)
+        |> filter(fn: (r) => r._measurement == "vibracao_resumo")
+        |> keep(columns: ["machineId", "isoCategory"])
+        |> group()
+        |> unique(column: "machineId")
+    `;
+
+    const maquinas = [];
+
+    await new Promise((resolve, reject) => {
+      queryApi.queryRows(query, {
+        next(row, tableMeta) {
+          const o = tableMeta.toObject(row);
+
+          maquinas.push({
+            machineId: o.machineId,
+            isoCategory: o.isoCategory ?? "catILe200",
+          });
+        },
+        error(error) {
+          reject(error);
+        },
+        complete() {
+          resolve();
+        },
+      });
+    });
+
+    res.json({
+      ok: true,
+      maquinas,
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      ok: false,
+      error: error.message,
+    });
+  }
+});
 app.listen(PORT, () => {
   console.log(`HTTP server rodando na porta ${PORT}`);
 });
