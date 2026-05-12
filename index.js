@@ -1212,12 +1212,10 @@ app.post("/iniciar_medicao", (req, res) => {
 app.get("/machines", async (req, res) => {
   try {
     const query = `
-      from(bucket: "${process.env.INFLUX_BUCKET}")
-        |> range(start: -365d)
-        |> filter(fn: (r) => r._measurement == "vibracao_resumo")
-        |> keep(columns: ["machineId", "isoCategory"])
-        |> group()
-        |> unique(column: "machineId")
+    from(bucket: "${process.env.INFLUX_BUCKET}")
+      |> range(start: -365d)
+      |> filter(fn: (r) => r._measurement == "vibracao_resumo")
+      |> last()
     `;
 
     const maquinas = [];
