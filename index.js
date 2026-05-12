@@ -1215,8 +1215,9 @@ app.get("/machines", async (req, res) => {
     from(bucket: "${process.env.INFLUX_BUCKET}")
       |> range(start: -365d)
       |> filter(fn: (r) => r._measurement == "vibracao_resumo")
-      |> last()
-    `;
+      |> filter(fn: (r) => r._field == "vrmsVelGlobal")
+      |> sort(columns: ["_time"], desc: true)
+  `;
 
     const maquinasMap = new Map();
 
@@ -1224,11 +1225,13 @@ app.get("/machines", async (req, res) => {
       queryApi.queryRows(query, {
         next(row, tableMeta) {
           const o = tableMeta.toObject(row);
-
-          maquinasMap.set(o.machineId, {
-            machineId: o.machineId,
-            isoCategory: o.isoCategory ?? "catILe200",
-          });
+    
+          if (!maquinasMap.has(o.machineId)) {
+            maquinasMap.set(o.machineId, {
+              machineId: o.machineId,
+              isoCategory: o.isoCategory ?? "catILe200",
+            });
+          }
         },
         error(error) {
           reject(error);
@@ -1238,7 +1241,7 @@ app.get("/machines", async (req, res) => {
         },
       });
     });
-
+    
     res.json({
       ok: true,
       maquinas: Array.from(maquinasMap.values()),
