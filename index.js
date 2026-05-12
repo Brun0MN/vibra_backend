@@ -1225,10 +1225,12 @@ app.get("/machines", async (req, res) => {
         next(row, tableMeta) {
           const o = tableMeta.toObject(row);
 
-          maquinas.push({
-            machineId: o.machineId,
-            isoCategory: o.isoCategory ?? "catILe200",
-          });
+          if (!maquinas.some((m) => m.machineId === o.machineId)) {
+            maquinas.push({
+              machineId: o.machineId,
+              isoCategory: o.isoCategory ?? "catILe200",
+            });
+          }
         },
         error(error) {
           reject(error);
