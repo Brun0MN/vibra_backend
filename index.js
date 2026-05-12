@@ -113,6 +113,8 @@ client.on("message", async (topic, messageBuffer) => {
   if (topic.includes("/resultado_resumo")) {
     try {
       const data = JSON.parse(messageBuffer.toString());
+      console.log("RESULTADO_RESUMO RECEBIDO");
+      console.log(data);
       await salvarResumoInflux(data);
       console.log(`Resumo Influx salvo: ${data.measurementId}`);
     } catch (error) {
