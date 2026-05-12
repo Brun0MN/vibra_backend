@@ -1218,19 +1218,17 @@ app.get("/machines", async (req, res) => {
       |> last()
     `;
 
-    const maquinas = [];
+    const maquinasMap = new Map();
 
     await new Promise((resolve, reject) => {
       queryApi.queryRows(query, {
         next(row, tableMeta) {
           const o = tableMeta.toObject(row);
 
-          if (!maquinas.some((m) => m.machineId === o.machineId)) {
-            maquinas.push({
-              machineId: o.machineId,
-              isoCategory: o.isoCategory ?? "catILe200",
-            });
-          }
+          maquinasMap.set(o.machineId, {
+            machineId: o.machineId,
+            isoCategory: o.isoCategory ?? "catILe200",
+          });
         },
         error(error) {
           reject(error);
@@ -1243,7 +1241,7 @@ app.get("/machines", async (req, res) => {
 
     res.json({
       ok: true,
-      maquinas,
+      maquinas: Array.from(maquinasMap.values()),
     });
 
   } catch (error) {
