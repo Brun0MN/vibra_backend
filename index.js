@@ -934,8 +934,72 @@ app.get("/tendencia_influx", async (req, res) => {
         },
       });
     });
+    const referencia = pontos.find((p) =>
+  p.vrmsVelX > 0 || p.vrmsVelY > 0 || p.vrmsVelZ > 0
+);
 
-    res.json({ ok: true, pontos });
+function variacaoPercentual(atual, ref) {
+  if (!ref || ref <= 0) return 0;
+  return ((atual - ref) / ref) * 100;
+}
+
+const pontosComTendencia = pontos.map((p) => {
+  if (!referencia) {
+    return {
+      ...p,
+      tendenciaAlerta: false,
+      tendenciaEixo: "-",
+      tendenciaVariacaoPercentual: 0,
+      tendenciaMensagem: "",
+    };
+  }
+
+  const variacaoX = variacaoPercentual(p.vrmsVelX, referencia.vrmsVelX);
+  const variacaoY = variacaoPercentual(p.vrmsVelY, referencia.vrmsVelY);
+  const variacaoZ = variacaoPercentual(p.vrmsVelZ, referencia.vrmsVelZ);
+
+  let maiorVariacao = variacaoX;
+  let eixo = "X";
+
+  if (variacaoY > maiorVariacao) {
+    maiorVariacao = variacaoY;
+    eixo = "Y";
+  }
+
+  if (variacaoZ > maiorVariacao) {
+    maiorVariacao = variacaoZ;
+    eixo = "Z";
+  }
+
+  const tendenciaAlerta = maiorVariacao >= 25.0;
+
+  return {
+    ...p,
+    variacaoX,
+    variacaoY,
+    variacaoZ,
+    tendenciaAlerta,
+    tendenciaEixo: tendenciaAlerta ? eixo : "-",
+    tendenciaVariacaoPercentual: maiorVariacao,
+    tendenciaMensagem: tendenciaAlerta
+      ? `Aumento de ${maiorVariacao.toFixed(1)}% no eixo ${eixo} em relação à referência`
+      : "",
+  };
+});
+
+  res.json({
+    ok: true,
+    referencia: referencia
+      ? {
+          time: referencia.time,
+          vrmsVelX: referencia.vrmsVelX,
+          vrmsVelY: referencia.vrmsVelY,
+          vrmsVelZ: referencia.vrmsVelZ,
+          vrmsVelIso: referencia.vrmsVelIso,
+        }
+      : null,
+    pontos: pontosComTendencia,
+  });
   } catch (error) {
     console.error("Erro GET /tendencia_influx:", error);
     res.status(500).json({ ok: false, error: error.message });
