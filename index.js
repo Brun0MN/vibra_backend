@@ -865,16 +865,24 @@ app.get("/tendencia_influx", async (req, res) => {
     const machineId = req.query.machineId || "motor_01";
 
     const query = `
-      from(bucket: "${process.env.INFLUX_BUCKET}")
-        |> range(start: -60d)
-        |> filter(fn: (r) => r._measurement == "vibracao_resumo")
-        |> filter(fn: (r) => r.machineId == "${machineId}")
-        |> filter(fn: (r) => r._field == "vrmsVelGlobal")
-        |> group()
-        |> sort(columns: ["_time"])
-        |> tail(n: 30)
-        |> sort(columns: ["_time"])
-    `;
+    from(bucket: "${process.env.INFLUX_BUCKET}")
+      |> range(start: -60d)
+      |> filter(fn: (r) => r._measurement == "vibracao_resumo")
+      |> filter(fn: (r) => r.machineId == "${machineId}")
+      |> filter(fn: (r) => contains(value: r._field, set: [
+        "vrmsVelGlobal",
+        "vrmsVelX",
+        "vrmsVelY",
+        "vrmsVelZ",
+        "vrmsVelIso",
+        "vrmsVelResultante",
+        "alarmLevel",
+        "alarmMessage"
+      ]))
+      |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+      |> sort(columns: ["_time"])
+      |> tail(n: 30)
+  `;
 
     const pontos = [];
 
@@ -898,9 +906,19 @@ app.get("/tendencia_influx", async (req, res) => {
 
           pontos.push({
             time: o._time,
-            value: o._value,
             machineId: o.machineId,
             isoCategory: o.isoCategory ?? "catILe200",
+          
+            // Mantém "value" para não quebrar o app atual
+            value: safeNumber(o.vrmsVelGlobal ?? o.vrmsVelIso ?? 0),
+          
+            // Novos campos por eixo
+            vrmsVelGlobal: safeNumber(o.vrmsVelGlobal ?? o.vrmsVelIso ?? 0),
+            vrmsVelX: safeNumber(o.vrmsVelX),
+            vrmsVelY: safeNumber(o.vrmsVelY),
+            vrmsVelZ: safeNumber(o.vrmsVelZ),
+            vrmsVelIso: safeNumber(o.vrmsVelIso ?? o.vrmsVelGlobal),
+            vrmsVelResultante: safeNumber(o.vrmsVelResultante),
           
             alarmLevel: o.alarmLevel ?? "normal",
             alarmMessage: o.alarmMessage ?? "",
