@@ -221,6 +221,11 @@ async function salvarResumoInflux(data) {
     .tag("measurementId", data.measurementId || "sem_id")
     .tag("isoCategory", data.isoCategory || "catILe200")
     .floatField("vrmsVelGlobal", safeNumber(data.vrmsVelGlobal))
+    .floatField("vrmsVelX", safeNumber(data.vrmsVelX))
+    .floatField("vrmsVelY", safeNumber(data.vrmsVelY))
+    .floatField("vrmsVelZ", safeNumber(data.vrmsVelZ))
+    .floatField("vrmsVelIso", safeNumber(data.vrmsVelIso ?? data.vrmsVelGlobal))
+    .floatField("vrmsVelResultante", safeNumber(data.vrmsVelResultante))
     .floatField("vrmsGlobal", safeNumber(data.vrmsGlobal))
     .floatField("dominantFreqX", safeNumber(data.dominantFreqX))
     .floatField("dominantFreqY", safeNumber(data.dominantFreqY))
@@ -1065,6 +1070,12 @@ app.get("/medicoes_influx", async (req, res) => {
             createdAt: o._time,
 
             vrmsVelGlobal: o.vrmsVelGlobal ?? 0,
+            vrmsVelX: o.vrmsVelX ?? 0,
+            vrmsVelY: o.vrmsVelY ?? 0,
+            vrmsVelZ: o.vrmsVelZ ?? 0,
+            vrmsVelIso: o.vrmsVelIso ?? o.vrmsVelGlobal ?? 0,
+            vrmsVelResultante: o.vrmsVelResultante ?? 0,
+            
             vrmsGlobal: o.vrmsGlobal ?? 0,
 
             dominantFreqX: o.dominantFreqX ?? 0,
