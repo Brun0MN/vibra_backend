@@ -1034,8 +1034,10 @@ app.get("/tendencia_influx", async (req, res) => {
 
     if (!referencia) {
       referencia = pontos.find((p) =>
-        p.vrmsVelX > 0 || p.vrmsVelY > 0 || p.vrmsVelZ > 0
-      );
+      Number.isFinite(p.vrmsVelX) &&
+      Number.isFinite(p.vrmsVelY) &&
+      Number.isFinite(p.vrmsVelZ)
+    );
     }
 
 function variacaoPercentual(atual, ref) {
