@@ -238,6 +238,7 @@ async function salvarResumoInflux(data) {
     .stringField("alarmMessage", alarmMessage);
 
   writeApi.writePoint(p);
+  await salvarReferenciaInfluxSeNaoExistir(data);
 
   const timeRms = sanitizeArray(data.timeRmsRes || data.timeRms || []);
   const duracao = safeNumber(data.measurementDurationSec || 0);
@@ -577,7 +578,99 @@ function validateMedicao(payload) {
     throw new Error("Medição sem vetores válidos");
   }
 }
+async function salvarReferenciaInfluxSeNaoExistir(data) {
+  const machineId = data.machineId || "desconhecido";
 
+  const query = `
+    from(bucket: "${process.env.INFLUX_BUCKET}")
+      |> range(start: -3650d)
+      |> filter(fn: (r) => r._measurement == "referencia_maquina")
+      |> filter(fn: (r) => r.machineId == "${machineId}")
+      |> filter(fn: (r) => r._field == "vrmsVelIso")
+      |> limit(n: 1)
+  `;
+
+  let existeReferencia = false;
+
+  await new Promise((resolve, reject) => {
+    queryApi.queryRows(query, {
+      next() {
+        existeReferencia = true;
+      },
+      error(error) {
+        reject(error);
+      },
+      complete() {
+        resolve();
+      },
+    });
+  });
+
+  if (existeReferencia) {
+    return;
+  }
+
+  const vrmsVelX = safeNumber(data.vrmsVelX);
+  const vrmsVelY = safeNumber(data.vrmsVelY);
+  const vrmsVelZ = safeNumber(data.vrmsVelZ);
+  const vrmsVelIso = safeNumber(data.vrmsVelIso ?? data.vrmsVelGlobal);
+
+  if (vrmsVelX <= 0 && vrmsVelY <= 0 && vrmsVelZ <= 0) {
+    console.log("Referência não criada: valores de eixo zerados");
+    return;
+  }
+
+  const p = new Point("referencia_maquina")
+    .tag("machineId", machineId)
+    .tag("measurementId", data.measurementId || "sem_id")
+    .floatField("vrmsVelX", vrmsVelX)
+    .floatField("vrmsVelY", vrmsVelY)
+    .floatField("vrmsVelZ", vrmsVelZ)
+    .floatField("vrmsVelIso", vrmsVelIso);
+
+  writeApi.writePoint(p);
+  await writeApi.flush();
+
+  console.log(`Referência Influx criada para máquina ${machineId}`);
+}
+
+async function buscarReferenciaInflux(machineId) {
+  const query = `
+    from(bucket: "${process.env.INFLUX_BUCKET}")
+      |> range(start: -3650d)
+      |> filter(fn: (r) => r._measurement == "referencia_maquina")
+      |> filter(fn: (r) => r.machineId == "${machineId}")
+      |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
+      |> sort(columns: ["_time"])
+      |> limit(n: 1)
+  `;
+
+  let referencia = null;
+
+  await new Promise((resolve, reject) => {
+    queryApi.queryRows(query, {
+      next(row, tableMeta) {
+        const o = tableMeta.toObject(row);
+
+        referencia = {
+          time: o._time,
+          vrmsVelX: safeNumber(o.vrmsVelX),
+          vrmsVelY: safeNumber(o.vrmsVelY),
+          vrmsVelZ: safeNumber(o.vrmsVelZ),
+          vrmsVelIso: safeNumber(o.vrmsVelIso),
+        };
+      },
+      error(error) {
+        reject(error);
+      },
+      complete() {
+        resolve();
+      },
+    });
+  });
+
+  return referencia;
+}
 function safeNumber(value) {
   const num = Number(value);
   if (!Number.isFinite(num)) return 0;
@@ -937,9 +1030,13 @@ app.get("/tendencia_influx", async (req, res) => {
     pontos.sort((a, b) => {
       return new Date(a.time).getTime() - new Date(b.time).getTime();
     });
-    const referencia = pontos.find((p) =>
-  p.vrmsVelX > 0 || p.vrmsVelY > 0 || p.vrmsVelZ > 0
-);
+    let referencia = await buscarReferenciaInflux(machineId);
+
+    if (!referencia) {
+      referencia = pontos.find((p) =>
+        p.vrmsVelX > 0 || p.vrmsVelY > 0 || p.vrmsVelZ > 0
+      );
+    }
 
 function variacaoPercentual(atual, ref) {
   if (!ref || ref <= 0) return 0;
