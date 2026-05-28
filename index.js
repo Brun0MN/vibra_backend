@@ -934,6 +934,9 @@ app.get("/tendencia_influx", async (req, res) => {
         },
       });
     });
+    pontos.sort((a, b) => {
+      return new Date(a.time).getTime() - new Date(b.time).getTime();
+    });
     const referencia = pontos.find((p) =>
   p.vrmsVelX > 0 || p.vrmsVelY > 0 || p.vrmsVelZ > 0
 );
