@@ -615,8 +615,12 @@ async function salvarReferenciaInfluxSeNaoExistir(data) {
   const vrmsVelZ = safeNumber(data.vrmsVelZ);
   const vrmsVelIso = safeNumber(data.vrmsVelIso ?? data.vrmsVelGlobal);
 
-  if (vrmsVelX <= 0 && vrmsVelY <= 0 && vrmsVelZ <= 0) {
-    console.log("Referência não criada: valores de eixo zerados");
+  if (
+    !Number.isFinite(vrmsVelX) ||
+    !Number.isFinite(vrmsVelY) ||
+    !Number.isFinite(vrmsVelZ)
+  ) {
+    console.log("Referência não criada: valores inválidos");
     return;
   }
 
@@ -1040,10 +1044,19 @@ app.get("/tendencia_influx", async (req, res) => {
     );
     }
 
-function variacaoPercentual(atual, ref) {
-  if (!ref || ref <= 0) return 0;
-  return ((atual - ref) / ref) * 100;
-}
+    function variacaoPercentual(atual, ref) {
+      atual = safeNumber(atual);
+      ref = safeNumber(ref);
+    
+      if (ref === 0) {
+        if (atual === 0) return 0;
+    
+        // saiu de zero para algum valor
+        return 100;
+      }
+    
+      return ((atual - ref) / ref) * 100;
+    }
 
 const pontosComTendencia = pontos.map((p) => {
   if (!referencia) {
